@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 my $skip=shift()||die("\nUsage: $0 numOfLinesToSkip [numOfLinesToPrint] [offsetStartLines]\n\n");
-my $lines=shift()||0;	# number of lines to print
+my $lines=shift()||25;	# number of lines to print
 my $offset=shift()||0;	# offset start point by number of lines (can be signed)
 while(<>)
 {
