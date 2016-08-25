@@ -1,0 +1,72 @@
+#!/usr/bin/perl -w
+# vim: set ts=4 sw=4 noet
+#
+# phpdoc -- janky rip-off of perldoc for looking-up PHP functions
+#           I often shell-out to do perldoc and wanted to do this
+#           requires HTML::Strip, wget(1), and less(1)
+#                    ^- Ubuntu? apt-get install libhtml-strip-perl
+#                    ^- CentOS? yum install perl-HTML-Strip.x86_64
+#           @anthonykava 2016-08-25.1326.ACK
+#
+use strict;										# of course
+use warnings;									# why not?
+use HTML::Strip;								# for stripping HTML (makes sense)
+
+# Function as arg ($query)
+my $query=shift()||'';
+$query=shift()||'' if $query eq '-f';			# account for confusion with perldoc
+die("\nUsage: $0 [function]\n\n") if !$query;	# usage die()
+
+# Kludgey attempt to get our language or default to English
+my $tongue=$ENV{'LANG'}	? substr($ENV{'LANG'},0,2)
+						: substr($ENV{'LANGUAGE'},0,2);
+$tongue='en' if !$tongue;
+
+# Intended to do searching then got lazy
+#my $html=`wget -qO - "https://secure.php.net/search.php?pattern=$query"`;
+
+# These URLs use hyphens in lieu of underscores, for example
+my $webquery=$query;
+$webquery=~s/_/-/g;
+
+# Get the page
+my $html=`wget -qO - "https://secure.php.net/manual/$tongue/function.$webquery.php"`;
+
+# Tweak the HTML
+my $tweaked='';									# holder for tweaked HTML
+foreach(split(/[\r\n]+/,$html))					# split on new lines and read
+{
+	# only tweak at this time is meant to keep function and args on the same line
+	my $nl=/class="method/ && /<\/span>$/ ? '' : "\n";
+	$tweaked.=$_.$nl;
+}
+
+my $streak=0;									# streak of blank lines counter
+my $begin=0;									# flag -- should we begin printing?
+my $output='';									# holds our output until the end
+
+my $hs=HTML::Strip->new();						# think they call this instantiation
+foreach(split(/[\r\n]+/,$hs->parse($tweaked)))	# split on new lines and read
+{
+	s/[^\x20-\x7e]//g;							# printable ASCII only, per favore
+	$streak++ if !$_ ||  /^\s+$/;				# incr $streak if blank
+	$streak=0 if  $_ && !/^\s+$/;				# reset $streak if not so blank
+	$begin=1 if /^\s*\Q$query\E\s*$/;			# start printing when we see $query
+	if(/add a note/||/User Contributed Notes/)	# we'll stop here
+	{
+		$begin=0;
+		last();
+	}
+	$output.=$_."\n" unless !$begin || $streak>1;
+}
+$hs->eof();										# $hs, out!
+if(open(my $ph,'|less'))						# try to pipe to my favourite pager
+{
+	print $ph $output;							# unleash the beast
+	close($ph);
+}
+else											# only error checking in this thing
+{
+	print STDERR "FATAL: Could not open a 'less' pipe\n";
+}
+exit(0);										# fin
