@@ -1,4 +1,6 @@
 #!/usr/bin/perl -w
+# vim: set ts=4 sw=4 set noet
+#
 # ----------------
 # sme.dl.neogov.pl
 # ----------------
