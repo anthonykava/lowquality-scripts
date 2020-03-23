@@ -216,7 +216,7 @@ sub getHostName {
 sub findUrl {
     my $ret='';
     for my $i (0 .. $#ARGV) {
-        if($ARGV[$i]=~/^https?:/) {
+        if($ARGV[$i]=~/^https?:/i) {
             $ret=$ARGV[$i];
             last();
         }
