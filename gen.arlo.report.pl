@@ -95,11 +95,11 @@ END
                 }
 
                 if($key && $msepoch && $tnFile && $cam && $shortTime && $duration && $info) {
-					# TSV output
-					print join("\t",$key,$msepoch,$tnFile,$cam,$shortTime,$duration,$info)."\n"
-						if $outType eq 'tsv';
+		    # TSV output
+                    print join("\t",$key,$msepoch,$tnFile,$cam,$shortTime,$duration,$info)."\n"
+                        if $outType eq 'tsv';
 
-					# HTML output
+                    # HTML output
                     my $num=-1;
                     $num=sprintf('%03d',$1) if $key=~/_(\d+)$/;
                     my $time=&ansi($msepoch/1000);
@@ -122,11 +122,11 @@ END
                 </td>
             </tr>
 END
-					# reset variables
+                    # reset variables
                     ($key,$msepoch,$tnFile,$cam,$shortTime,$duration,$info,$ll)=
                         ('',0,'','','','','','');
                 }
-                $ll=$_;		# holds our last line of input
+                $ll=$_; # holds our last line of input
             }
         }
         close($fh);
