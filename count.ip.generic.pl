@@ -18,8 +18,8 @@ use Socket qw/inet_aton inet_ntoa/;                     # for converting IPs to/
 
 # variables
 my $threshold   = shift()||2;                           # print results for >=$threshold hits
-my %ipHits=();                                          # hash to store IP counts
-my %netHits=();                                         # hash to store /24 counts
+my %ipHits      = ();                                   # hash to store IP counts
+my %netHits     = ();                                   # hash to store /24 counts
 
 # parse input
 while(<>) {                                             # iterate through input
