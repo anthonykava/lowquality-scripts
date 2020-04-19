@@ -21,8 +21,8 @@ my $truncLen    = 150;                                                  # chars 
 $file='/dev/stdin' if !$file || $file eq '-';                           # - means STDIN, set $file value
 
 # santity checks
-die("\nUsage: $0 dom|rcpt|size [file.csv]\n\n")                         # die(), bad $type argument
-    if $type!~/^[drs]/i;                                                # <-- valid args, just first letters
+die("\nUsage: $0 dom|rcpt|size|list [file.csv|-]\n\n")                  # die(), bad $type argument
+    if $type!~/^[drsl]/i;                                               # <-- valid args, just first letters
 die("FATAL: Problem with CSV file=${file}")                             # die(), CSV file issue
     if !$file || !-e $file;
 
@@ -103,5 +103,13 @@ elsif($type=~/^s/i) {                                               # sizes outp
                 "             s:%-$maxen{'Subject'}s\n".
                 "             t:%-19s\n",
             defined($sizes{$_}) ? $sizes{$_}/1024/1024 : 0,$de,$a,$s,$t);
+    }
+}
+elsif($type=~/^l/i) {                                               # list output
+    foreach(sort(keys(%sizes))) {                                   # re-purpose %sizes
+        s/[^\x00\x20-\x7e]//g;                                      # strip non-printable
+        my($t,$de,$a,$s)=split(/\x00/,$_);                          # split our key into pieces
+        printf( "%19s  %-$maxen{'From'}s  ->  a:%-$maxen{'To'}s  [ %-$maxen{'Subject'}s ]\n",
+            $t,$de,$a,$s);
     }
 }
