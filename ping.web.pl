@@ -62,7 +62,7 @@ my $seq         =  0;                           # tracking number of
 my $host        = &getHostName($url);           # hostname de la URL
 my $pip         = gethostbyname($host);         # packed IP for host
 
-# tofu and potatos
+# tofu and potatoes
 die("FATAL: Unable to resolve hostname '$host'") if !defined($pip);
 printf("PING %s (%s) via '%s'\n",$host,inet_ntoa($pip),$url);
 $SIG{INT}=sub { $halt=1; };                     # ^C stops the press
