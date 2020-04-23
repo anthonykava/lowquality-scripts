@@ -3,6 +3,8 @@
 #
 # calc.percent.zeros.pl -- read an input file, output stats including
 #                          a percentage of 0x0 bytes vs. total bytes
+#
+#                          @anthonykava                    2020-04-23
 
 use strict;                                             # semper
 use warnings;                                           # errorus
