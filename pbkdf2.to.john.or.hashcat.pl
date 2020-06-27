@@ -44,7 +44,7 @@ if(my $aoh=csv( in => $file, headers => 'lc' )) {           # get an array o' ha
     my $id=100000;                                          # base user id if we didn't find one
     foreach my $href (@$aoh) {                              # iterate through array of hashes
         my %h=%$href;                                       # dereference hash ref for convenience
-        foreach(keys(%h)) {                                 # iterate through has to clean values
+        foreach(keys(%h)) {                                 # iterate through hash to clean values
             $h{$_}='' if !defined($h{$_});                  # init keys we might have missed this row
             $h{$_}=~s/[^\x20-\x7e]//g;                      # strip non-printable ASCII
             $h{$_}=~s/^\s+//;                               # remove leading spaces
