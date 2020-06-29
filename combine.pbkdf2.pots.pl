@@ -46,7 +46,7 @@ while(<>) {
     #   hashcat -> sha1:1000:O6z3B9X3VDuvJThY/xoLIlEHTHT9IwoV:U1x4ZEodplJJtO1xQSSgCivBufkp/mAu:tiptop
     #   john    -> $pbkdf2-hmac-sha1$1000$8ceb26d5ca278ca874d8e2278df0f98a0435a2348f3846c7$8387fdc5bc8a14f46d5b3e3e5a3c23cfd20caa03d73a840e:5499
     if(/^sha1:(\d+):([0-9a-zA-Z\/+=]+):([0-9a-zA-Z\/+=]+):(.+)$/i) {        # hashcat value
-        my($iter,$b64_salt,$b64_hash,$plain)=($1,$2,$3,$4);                 # you gotta keep'em separated
+        my($iter,$b64_salt,$b64_hash,$plain)=($1,$2,$3,$4);                 # you gotta keep 'em separated
         print()         if $out{'hstd'};                                    # passthrough si hashcat STDOUT
         print STDERR $_ if $out{'herr'};                                    # passthrough si hashcat STDERR
         if($out{'jstd'} || $out{'jerr'}) {                                  # convert to john if needed
@@ -62,7 +62,7 @@ while(<>) {
         my($iter,$hex_salt,$hex_hash,$plain)=($1,$2,$3,$4);                 # split 'em up, up ,up
         print()         if $out{'jstd'};                                    # passthrough si john STDOUT
         print STDERR $_ if $out{'jerr'};                                    # passthrough si john STDERR
-        if($out{'hstd'} || $out{'herr'}) {                                  # convert to john if needed
+        if($out{'hstd'} || $out{'herr'}) {                                  # convert to hashcat if needed
             chomp(my $salt=encode_base64(pack("H*", $hex_salt)));           # hex string -> Base64 (salt)
             chomp(my $hash=encode_base64(pack("H*", $hex_hash)));           # hex string -> Base64 (hash)
             printf("sha1:%d:%s:%s:%s\n",                                    # hashcat output STDOUT
