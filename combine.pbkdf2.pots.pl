@@ -63,8 +63,8 @@ while(<>) {
         print()         if $out{'jstd'};                                    # passthrough si john STDOUT
         print STDERR $_ if $out{'jerr'};                                    # passthrough si john STDERR
         if($out{'hstd'} || $out{'herr'}) {                                  # convert to hashcat if needed
-            chomp(my $salt=encode_base64(pack("H*", $hex_salt)));           # hex string -> Base64 (salt)
-            chomp(my $hash=encode_base64(pack("H*", $hex_hash)));           # hex string -> Base64 (hash)
+            my $salt=encode_base64(pack("H*", $hex_salt), '');              # hex string -> Base64 (salt)
+            my $hash=encode_base64(pack("H*", $hex_hash), '');              # hex string -> Base64 (hash)
             printf("sha1:%d:%s:%s:%s\n",                                    # hashcat output STDOUT
                 $iter,$salt,$hash,$plain) if $out{'hstd'};
             printf STDERR ("sha1:%d:%s:%s:%s\n",                            # hashcat output STDERR
