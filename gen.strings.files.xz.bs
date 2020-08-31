@@ -1,0 +1,27 @@
+#!/bin/bash
+# vim: set ts=4 sw=4 noet
+#
+# gen.strings.files.xz.bs
+# -----------------------
+# point at binary file/dev and this will run strings and compress with xz -9
+#   * 'xz -9' for space + low CPU cost on decompression (CPU cost paid upfront)
+#   * 'strings --radix d' so each string is prefixed with a decimal offset
+#   * runs 'strings' with '-e s' then '-e l' to get 8 and 16-bit (little endian)
+#   * intended for searching, e.g., 'xzgrep -F targetString strings.s.txt.xz'
+#   * use decimal offset to dig through hex dumps or carve stuff in original
+#
+#                                   [ comments updated 2020-08-31 @anthonykava ]
+
+if [ $# == 0 ]; then
+    echo -e "\nUsage: $0 file00.bin [file01.bin ...]\n"
+else
+    for i in $@; do                                         # input file
+        for j in s l; do                                    # do -e s, -e l
+            template="strings.${j}.${i}.txt.xz"             # output file
+            sfile=`echo "${template}" | sed 's/\//./g' | sed 's/\.\+/./g'`
+            echo "$i ($j) => $sfile"
+#           export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
+            strings --radix=d -e $j "$i" | xz -9c -T 0 >"$sfile"
+        done
+    done
+fi
