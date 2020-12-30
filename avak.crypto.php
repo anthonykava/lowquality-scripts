@@ -198,11 +198,11 @@ function aesDecrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     return( $ret );
 }
 
-// derives a 256-bit key from arbitrary $password; returns a string with base64-encoded salt:key
+// derives a 256-bit key from arbitrary $password; returns a string with salt:iterations:key (salt/key base64-encoded)
 function deriveKey( $password=null, $salt=null, $iterations=null ) {
     if( !$salt )        $salt = randomBytes( 16 );
     if( !$iterations )  $iterations = 131337;   // 100,000 took ~250 ms on my 2018-era PC
-    return( base64_encode( $salt ) . ':' . base64_encode( hash_pbkdf2( 'sha256', $password, $salt, $iterations, 32, true ) ) );
+    return( base64_encode( $salt ) . ":${iterations}:" . base64_encode( hash_pbkdf2( 'sha256', $password, $salt, $iterations, 32, true ) ) );
 }
 
 ?>
