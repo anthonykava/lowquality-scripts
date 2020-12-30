@@ -33,7 +33,7 @@ function sha256( $data=null ) {
 
 // takes arbitrary $data, ASCII public key; returns binary cipher text
 function rsaEncryptPublic( $data=null, $publicKeyString=null ) {
-    $encryptedData=null;
+    $encryptedData = null;
     if( $data && $publicKeyString ) {
         $publicKey = openssl_pkey_get_public( $publicKeyString );
         if( $publicKey ) {
@@ -47,7 +47,7 @@ function rsaEncryptPublic( $data=null, $publicKeyString=null ) {
 
 // takes binary cipher text $data, ASCII public key; returns (binary) plain text
 function rsaDecryptPublic( $data=null, $publicKeyString=null ) {
-    $decryptedData=null;
+    $decryptedData = null;
     if( $data && $publicKeyString ) {
         $publicKey = openssl_pkey_get_public( $publicKeyString );
         if( $publicKey ) {
@@ -64,7 +64,7 @@ function rsaDecryptPublic( $data=null, $publicKeyString=null ) {
 
 // takes arbitrary $data, base64-encoded $signature, ASCII public key; returns 1=good, 0=bad, -1=error
 function rsaVerifyPublic( $data=null, $signature=null, $publicKeyString=null ) {
-    $verification=-1;
+    $verification = -1;
     if( $data && $signature && $publicKeyString ) {
         $publicKey = openssl_pkey_get_public( $publicKeyString );
         if( $publicKey ) {
@@ -78,7 +78,7 @@ function rsaVerifyPublic( $data=null, $signature=null, $publicKeyString=null ) {
 
 // takes ASCII public key; returns array() from openssl_pkey_get_details
 function rsaDetailsPublic( $publicKeyString=null ) {
-    $details=null;
+    $details = null;
     if( $publicKeyString ) {
         $publicKey = openssl_pkey_get_public( $publicKeyString );
         if( $publicKey ) {
@@ -92,7 +92,7 @@ function rsaDetailsPublic( $publicKeyString=null ) {
 
 // takes arbitrary $data, ASCII private key, optional $password (for encrypted keys); returns binary cipher text
 function rsaEncryptPrivate( $data=null, $privateKeyString=null, $password=null ) {
-    $encryptedData=null;
+    $encryptedData = null;
     if( $data && $privateKeyString ) {
         $privateKey = openssl_pkey_get_private( $privateKeyString, $password );
         if( $privateKey ) {
@@ -106,7 +106,7 @@ function rsaEncryptPrivate( $data=null, $privateKeyString=null, $password=null )
 
 // takes binary cipher text $data, ASCII private key, optional $password (for encrypted keys); returns (binary) plain text
 function rsaDecryptPrivate( $data=null, $privateKeyString=null, $password=null ) {
-    $decryptedData=null;
+    $decryptedData = null;
     if( $data && $privateKeyString ) {
         $privateKey = openssl_pkey_get_private( $privateKeyString, $password );
         if( $privateKey ) {
@@ -123,7 +123,7 @@ function rsaDecryptPrivate( $data=null, $privateKeyString=null, $password=null )
 
 // takes arbitrary $data, ASCII private key, optional $password (for encrypted keys); returns base64-encoded $signature
 function rsaSignPrivate( $data=null, $privateKeyString=null, $password=null ) {
-    $signature=null;
+    $signature = null;
     if( $data && $privateKeyString ) {
         $privateKey = openssl_pkey_get_private( $privateKeyString, $password );
         if( $privateKey ) {
@@ -137,7 +137,7 @@ function rsaSignPrivate( $data=null, $privateKeyString=null, $password=null ) {
 
 // takes ASCII private key, optional $password (for encrypted keys); returns array() from openssl_pkey_get_details()
 function rsaDetailsPrivate( $privateKeyString=null, $password=null ) {
-    $details=null;
+    $details = null;
     if( $privateKeyString ) {
         $privateKey = openssl_pkey_get_private( $privateKeyString, $password );
         if( $privateKey ) {
@@ -176,7 +176,7 @@ function aesGenIV( $cipher='aes-256-ctr' ) {
     return( randomBytes( openssl_cipher_iv_length( $cipher ) ) );
 }
 
-// takes arbitrary $data, binary $key; returns base64-encoded data (4-byte IV, 4-byte HMAC, then cipher text)
+// takes arbitrary $data, binary $key; returns base64-encoded data (16-byte IV, 32-byte HMAC, then cipher text)
 function aesEncrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     if( is_null( $iv ) ) $iv = aesGenIV( $cipher );             // generate random IV if not specified
     $encryptedData = openssl_encrypt( $data, $cipher, $key, OPENSSL_RAW_DATA, $iv );
@@ -184,12 +184,13 @@ function aesEncrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     return( base64_encode( $iv . $hmac . $encryptedData ) );
 }
 
-// takes base64-encoded $data (4-byte IV, 4-byte HMAC, then cipher text), binary $key; returns raw plain text
+// takes base64-encoded $data (16-byte IV, 32-byte HMAC, then cipher text), binary $key; returns raw plain text
 function aesDecrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
-    $ret=null;
-    if( is_null( $iv ) ) $iv = substr( base64_decode( $data ), 0, openssl_cipher_iv_length( $cipher ) );    // extract IV if not specified
-    $hmac = substr( base64_decode( $data ), openssl_cipher_iv_length( $cipher ), 32 );  // 32 bytes = 256 bits for SHA-256
-    $encryptedData = substr( base64_decode( $data ), openssl_cipher_iv_length( $cipher ) + 32 );
+    $ret = null;
+    $bin = base64_decode( $data );                                                      // decode base64-encoded $data
+    if( is_null( $iv ) ) $iv = substr( $bin, 0, openssl_cipher_iv_length( $cipher ) );  // extract IV if not specified
+    $hmac = substr( $bin, openssl_cipher_iv_length( $cipher ), 32 );                    // 32 bytes = 256 bits for SHA-256
+    $encryptedData = substr( $bin, openssl_cipher_iv_length( $cipher ) + 32 );          // rest is cipher text
     if( hash_equals( $hmac, hash_hmac( 'sha256', $encryptedData, $key, true ) ) ) {     // return plain text only if HMAC matches
         $ret = openssl_decrypt( $encryptedData, $cipher, $key, OPENSSL_RAW_DATA, $iv );
     } else {
@@ -198,10 +199,10 @@ function aesDecrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     return( $ret );
 }
 
-// derives a 256-bit key from arbitrary $password; returns a string with salt:iterations:key (salt/key base64-encoded)
+// derives a 256-bit key from arbitrary $password; returns a string with salt:iterations:key (salt and key base64-encoded)
 function deriveKey( $password=null, $salt=null, $iterations=null ) {
     if( !$salt )        $salt = randomBytes( 16 );
-    if( !$iterations )  $iterations = 131337;   // 100,000 took ~250 ms on my 2018-era PC
+    if( !$iterations )  $iterations = 331337;   // 100,000 took ~250 ms on my 2018-era PC
     return( base64_encode( $salt ) . ":${iterations}:" . base64_encode( hash_pbkdf2( 'sha256', $password, $salt, $iterations, 32, true ) ) );
 }
 
