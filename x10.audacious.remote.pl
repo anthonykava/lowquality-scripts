@@ -31,7 +31,7 @@ die( "fatal: ${audtool} not found" ) if !-e $audtool;
 die( "fatal: ${comPort} not found" ) if !-e $comPort;
 die( "fatal: failed to get-volume" ) if $lastVol !~ /^\d+$/;
 while( my $port = &initPort() ) {   # returns Device::SerialPort object
-    warn( &lt() .  " listening on ${comPort} (${comBaud}/${comMode})" ) if $debug;
+    warn( &lt() . " debug: listening on ${comPort} (${comBaud}/${comMode})" ) if $debug;
     while( $port ) {
         my( $count, $data ) = $port->read( $bytes );
         if( $count ) {
@@ -46,7 +46,8 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
                                 &lt(), $f, $code ) if $debug;
 
                 my($cmd,$arg)=('','');
-                if      ( $f eq 'select'   )    { &favourite();                     }
+                if      ( $f eq 'select'      ) { &favourite();                     }
+                elsif   ( $f eq 'last'        ) { &lockScreen();                    }
                 elsif   ( $f eq 'channelUp'   ) { $cmd = 'playlist-advance';        }
                 elsif   ( $f eq 'channelDown' ) { $cmd = 'playlist-reverse';        }
                 elsif   ( $f eq 'play'        ) { $cmd = 'playback-play';           }
@@ -91,7 +92,7 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
             }
         }
     }
-    warn( &lt() .  "lost our port! sleeping then regrouping" ) if $debug;
+    warn( &lt() . " error: lost our port! sleeping then regrouping" );
     sleep(1);
 }
 
@@ -102,7 +103,7 @@ sub aud {
     $arg    =~ s/[^\d]//g;          # sanitise
     my @out =  `"${audtool}" "${cmd}" "${arg}"`;
     chomp ( my $ret = defined($out[0]) ? $out[0] : '' );
-    warn  ( "debug: aud(cmd=${cmd}, arg=${arg}) -> '${ret}'" ) if $debug;
+    warn  ( &lt() . " debug: aud(cmd=${cmd}, arg=${arg}) -> '${ret}'" ) if $debug;
     return( $ret );
 }
 
@@ -151,31 +152,14 @@ sub initPort {
     return( $port );
 }
 
-# goofy method to copy favourite songs to a special location
 sub favourite {
     if( -d $favDir ) {                                      # sanity check
-        chomp( my $audPID = `pidof audacious` );            # simple attempt to audacious PID
-        if(!$audPID) {
-            chomp( my $audPath = `which audacious` );       # get full path to audacious
-            chomp( $audPID = `pidof "${audPath}"` );        # if we failed try full path
-        }
-
-        printf STDERR ( "TIME: %s\n", &lt() ) if $debug;
-        foreach my $pid ( $audPID =~ /\b(\d+)\b/mg ) {      # iterate through PIDs
-            printf STDERR ( " PID: %d\n", $pid ) if $debug;
-            foreach(`lsof -MblPnp "${pid}" 2>/dev/null`) {  # get list of open files
-                chomp();
-                if(/\d+\s+(\/.+\.mp3$)/i) {                     # find an MP3
-                    my $mp3 = $1;
-                    printf STDERR ( " MP3: %s\n", $mp3 ) if $debug;
-                    printf STDERR ( "COPY: %s -> %s\n", $mp3, $favDir ) if $debug;
-                    if( !system( '/bin/cp', '-n', $mp3, $favDir ) ) {
-                        printf STDERR ("  OK: cp(1) returned zero\n") if $debug;
-                    } else {
-                        warn( &lt() . " ERR: cp(1) returned non-zero\n");
-                    }
-                }
-            }
+        my $song = &aud( 'current-song-filename' );
+        if( !system( '/bin/cp', '-n', $song, $favDir ) ) {
+            printf STDERR ("%19s debug: copied '%s' to '%s'\n",
+                &lt(), $song, $favDir ) if $debug;
+        } else {
+            warn( &lt() . " error: cp(1) returned non-zero: '${song}' -> '${favDir}'" );
         }
     } else {
         warn( &lt() . " error: favDir=${favDir} not found" );
@@ -189,4 +173,13 @@ sub lt {
         sprintf( '%04d-%02d-%02d %02d:%02d:%02d',
             $l[5] + 1900, $l[4] + 1, $l[3], $l[2], $l[1], $l[0] )
     );
+}
+
+sub lockScreen {
+    my( $cmd, $arg ) = ( 'xdg-screensaver', 'lock' );
+    if( !system( $cmd, $arg ) ) {
+        warn( &lt() . "debug: locked screen with '${cmd} ${arg}'" ) if $debug;
+    } else {
+        warn( &lt() . "error: non-zero return from '${cmd} ${arg}' to lock screen: $?" );
+    }
 }
