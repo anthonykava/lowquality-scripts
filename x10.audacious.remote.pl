@@ -4,7 +4,7 @@
 # ------------------------------------------------------------------------------
 # We read serial data from a port connected to an X10 JR21A receiver in order to
 # receive button presses from the X10 JR20A remote.  MisterHouse says this thing
-# should be 1200/8N1, but 2400/8N1 worked for me.  We will use the signals trig-
+# should be 1200/8N1, but 2400/8N1 worked for me.  The remote signals will trig-
 # ger us to send commands to the wonderful Audacious audio player.
 # ------------------------------------------------------------------------------
 # | https://forensic.coffee                            @anthonykava 2020-12-30 |
