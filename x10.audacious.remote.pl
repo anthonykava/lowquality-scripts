@@ -21,16 +21,17 @@ my $comPort = '/dev/ttyUSB0';       # our serial device
 my $comBaud = 2400;                 # baud rate
 my $comMode = '8N1';                # settings (databits, parity, stop bits)
 my $bytes   = 4;                    # bytes to read at a time
-my %codes   = &initCodesTable();    # hash of 4-byte codes in hexit
+my $volDelta= 10;                   # % to change volume up/down at a time
 my $lastCode= '';                   # holds last code received (we get dups)
 my $lastTime= time();               # holds epoch time of last code
 my $lastVol = &aud('get-volume');   # last volume level (e.g., for unmute)
+my %codes   = &initCodesTable();    # hash of 4-byte codes in hexit
 
 die( "fatal: ${audtool} not found" ) if !-e $audtool;
 die( "fatal: ${comPort} not found" ) if !-e $comPort;
 die( "fatal: failed to get-volume" ) if $lastVol !~ /^\d+$/;
 while( my $port = &initPort() ) {   # returns Device::SerialPort object
-    warn( "listening on ${comPort} (${comBaud}/${comMode})" ) if $debug;
+    warn( &lt() .  " listening on ${comPort} (${comBaud}/${comMode})" ) if $debug;
     while( $port ) {
         my( $count, $data ) = $port->read( $bytes );
         if( $count ) {
@@ -41,15 +42,15 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
             if( $code ne $lastCode || time() != $lastTime ) {
                 my $f = defined( $codes{$code} ) ?
                     $codes{$code} : '(unknown)';
-                printf STDERR ( "[ %-12s ] [ %-8s ]\n",
-                    $f, $code ) if $debug;
+                printf STDERR ( "%19s [ %-12s ] [ %-8s ]\n",
+                                &lt(), $f, $code ) if $debug;
 
                 my($cmd,$arg)=('','');
                 if      ( $f eq 'select'   )    { &favourite();                     }
                 elsif   ( $f eq 'channelUp'   ) { $cmd = 'playlist-advance';        }
                 elsif   ( $f eq 'channelDown' ) { $cmd = 'playlist-reverse';        }
                 elsif   ( $f eq 'play'        ) { $cmd = 'playback-play';           }
-                elsif   ( $f eq 'stop'        ) { $cmd = 'stopback-stop';           }
+                elsif   ( $f eq 'stop'        ) { $cmd = 'playback-stop';           }
                 elsif   ( $f eq 'pause'       ) { $cmd = 'playback-pause';          }
                 elsif   ( $f eq 'a-b'         ) { $cmd = 'playlist-shuffle-toggle'; }
                 elsif   ( $f eq 'mute'        ) {
@@ -63,18 +64,18 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
                 elsif   ( $f eq 'volumeUp'    ) {
                     $cmd = 'set-volume';
                     $lastVol = &aud('get-volume');
-                    if( $lastVol >= 95 ) {
+                    if( $lastVol >= 100 - $volDelta ) {
                         $arg = 100;
                     } else {
-                        $arg = $lastVol + 5;
+                        $arg = $lastVol + $volDelta;
                     }}
                 elsif   ( $f eq 'volumeDown'  ) {
                     $cmd = 'set-volume';
                     $lastVol = &aud('get-volume');
-                    if( $lastVol <= 5 ) {
+                    if( $lastVol <= $volDelta ) {
                         $arg = 0;
                     } else {
-                        $arg = $lastVol - 5;
+                        $arg = $lastVol - $volDelta;
                     }}
                 elsif   ( $f eq 'rewind'      ) { $cmd = 'playback-seek-relative';
                                                   $arg = '-10';                     }
@@ -90,7 +91,7 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
             }
         }
     }
-    warn( "lost our port! sleeping then regrouping" ) if $debug;
+    warn( &lt() .  "lost our port! sleeping then regrouping" ) if $debug;
     sleep(1);
 }
 
@@ -101,7 +102,7 @@ sub aud {
     $arg    =~ s/[^\d]//g;          # sanitise
     my @out =  `"${audtool}" "${cmd}" "${arg}"`;
     chomp ( my $ret = defined($out[0]) ? $out[0] : '' );
-    warn  ( "debug: aud(cmd=${cmd}, arg=${arg}) -> ${ret}" ) if $debug;
+    warn  ( "debug: aud(cmd=${cmd}, arg=${arg}) -> '${ret}'" ) if $debug;
     return( $ret );
 }
 
@@ -159,6 +160,7 @@ sub favourite {
             chomp( $audPID = `pidof "${audPath}"` );        # if we failed try full path
         }
 
+        printf STDERR ( "TIME: %s\n", &lt() ) if $debug;
         foreach my $pid ( $audPID =~ /\b(\d+)\b/mg ) {      # iterate through PIDs
             printf STDERR ( " PID: %d\n", $pid ) if $debug;
             foreach(`lsof -MblPnp "${pid}" 2>/dev/null`) {  # get list of open files
@@ -170,10 +172,21 @@ sub favourite {
                     if( !system( '/bin/cp', '-n', $mp3, $favDir ) ) {
                         printf STDERR ("  OK: cp(1) returned zero\n") if $debug;
                     } else {
-                        warn(" ERR: cp(1) returned non-zero\n") if $debug;
+                        warn( &lt() . " ERR: cp(1) returned non-zero\n");
                     }
                 }
             }
         }
+    } else {
+        warn( &lt() . " error: favDir=${favDir} not found" );
     }
+}
+
+sub lt {
+    my $time= shift() || time();
+    my @l   = localtime( $time );
+    return(
+        sprintf( '%04d-%02d-%02d %02d:%02d:%02d',
+            $l[5] + 1900, $l[4] + 1, $l[3], $l[2], $l[1], $l[0] )
+    );
 }
