@@ -24,7 +24,7 @@ my $bytes   = 4;                    # bytes to read at a time
 my $volDelta= 10;                   # % to change volume up/down at a time
 my $lastCode= '';                   # holds last code received (we get dups)
 my $lastTime= time();               # holds epoch time of last code
-my $lastVol = &aud('get-volume');   # last volume level (e.g., for unmute)
+my $lastVol = &aud( 'get-volume' ); # last volume level (e.g., for unmute)
 my %codes   = &initCodesTable();    # hash of 4-byte codes in hexit
 
 die( "fatal: ${audtool} not found" ) if !-e $audtool;
@@ -48,6 +48,8 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
                 my($cmd,$arg)=('','');
                 if      ( $f eq 'select'      ) { &favourite();                     }
                 elsif   ( $f eq 'last'        ) { &lockScreen();                    }
+                elsif   ( $f eq 'PC'          ) { &fiatLux();                       }
+                elsif   ( $f eq 'upArrow'     ) { &fiatLux( 'non' );                }
                 elsif   ( $f eq 'channelUp'   ) { $cmd = 'playlist-advance';        }
                 elsif   ( $f eq 'channelDown' ) { $cmd = 'playlist-reverse';        }
                 elsif   ( $f eq 'play'        ) { $cmd = 'playback-play';           }
@@ -56,15 +58,15 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
                 elsif   ( $f eq 'a-b'         ) { $cmd = 'playlist-shuffle-toggle'; }
                 elsif   ( $f eq 'mute'        ) {
                     $cmd = 'set-volume';
-                    if( &aud('get-volume') == 0 ) {     # already muted (toggle)
+                    if( &aud( 'get-volume' ) == 0 ) {   # already muted (toggle)
                         $arg = $lastVol;                # restore to last volume
                     } else {                            # not muted ...
-                        $lastVol = &aud('get-volume');  # store last volume level
+                        $lastVol = &aud( 'get-volume ');# store last volume level
                         $arg = 0;                       # set to 0 (mute)
                     }}
                 elsif   ( $f eq 'volumeUp'    ) {
                     $cmd = 'set-volume';
-                    $lastVol = &aud('get-volume');
+                    $lastVol = &aud( 'get-volume' );
                     if( $lastVol >= 100 - $volDelta ) {
                         $arg = 100;
                     } else {
@@ -72,7 +74,7 @@ while( my $port = &initPort() ) {   # returns Device::SerialPort object
                     }}
                 elsif   ( $f eq 'volumeDown'  ) {
                     $cmd = 'set-volume';
-                    $lastVol = &aud('get-volume');
+                    $lastVol = &aud( 'get-volume' );
                     if( $lastVol <= $volDelta ) {
                         $arg = 0;
                     } else {
@@ -100,7 +102,7 @@ sub aud {
     my $cmd =  shift() || '';
     my $arg =  shift() || '';
     $cmd    =~ s/[^a-z\-]//g;       # sanitise
-    $arg    =~ s/[^\d]//g;          # sanitise
+    $arg    =~ s/[^\d\-+]//g;       # sanitise
     my @out =  `"${audtool}" "${cmd}" "${arg}"`;
     chomp ( my $ret = defined($out[0]) ? $out[0] : '' );
     warn  ( &lt() . " debug: aud(cmd=${cmd}, arg=${arg}) -> '${ret}'" ) if $debug;
@@ -123,6 +125,7 @@ sub initCodesTable {
     $codes{'66f860fe'} = 'pause';
     $codes{'66fe60fe'} = 'last';
     $codes{'781e98fe'} = 'select';
+    $codes{'669e66fe'} = 'upArrow';
     # there are more -- these were enough for me
     return( %codes );
 }
@@ -178,8 +181,15 @@ sub lt {
 sub lockScreen {
     my( $cmd, $arg ) = ( 'xdg-screensaver', 'lock' );
     if( !system( $cmd, $arg ) ) {
-        warn( &lt() . "debug: locked screen with '${cmd} ${arg}'" ) if $debug;
+        warn( &lt() . " debug: locked screen with '${cmd} ${arg}'" ) if $debug;
     } else {
-        warn( &lt() . "error: non-zero return from '${cmd} ${arg}' to lock screen: $?" );
+        warn( &lt() . " error: non-zero return from '${cmd} ${arg}' to lock screen: $?" );
     }
+}
+
+sub fiatLux {
+    my $arg     = shift() || '';
+    my $script  = '/usr/local/bin/light.bs';
+    if( $arg !~ /^n/i ) { system( $script, 'off' ); }
+    else                { system( $script, 'on'  ); }
 }
