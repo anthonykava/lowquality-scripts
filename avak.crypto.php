@@ -10,14 +10,14 @@
 //                                            @anthonykava 2020-12-29.1842.78-75
 
 // shortcut to trigger a warning
-function warn( $errorMessage='Unknown error, blame the scribe' ) {
+function avakWarn( $errorMessage='Unknown error, blame the scribe' ) {
     trigger_error( $errorMessage, E_USER_WARNING );
 }
 
 // generates and returns $len random bytes (32 bytes = 256 bits)
 function randomBytes( $len=32 ) {
     $ret = openssl_random_pseudo_bytes( $len, $cryptoStrong );
-    if( !$cryptoStrong ) warn( "WARNING: randomBytes() -> openssl_random_pseudo_bytes() not crypto_strong !!" );
+    if( !$cryptoStrong ) avakWarn( "WARNING: randomBytes() -> openssl_random_pseudo_bytes() not crypto_strong !!" );
     return( $ret );
 }
 
@@ -39,7 +39,7 @@ function rsaEncryptPublic( $data=null, $publicKeyString=null ) {
         if( $publicKey ) {
             openssl_public_encrypt( $data, $encryptedData, $publicKey, OPENSSL_PKCS1_OAEP_PADDING ); // default OPENSSL_PKCS1_PADDING
         } else {
-            warn( "WARNING: rsaEncryptPublic() -> openssl_pkey_get_public()" );
+            avakWarn( "WARNING: rsaEncryptPublic() -> openssl_pkey_get_public()" );
         }
     }
     return( $encryptedData );
@@ -53,24 +53,24 @@ function rsaDecryptPublic( $data=null, $publicKeyString=null ) {
         if( $publicKey ) {
             openssl_public_decrypt( $data, $decryptedData, $publicKey, OPENSSL_PKCS1_OAEP_PADDING );
             if( is_null( $decryptedData ) ) {
-                warn( "WARNING: rsaDecryptPublic() -> openssl_public_decrypt()" );
+                avakWarn( "WARNING: rsaDecryptPublic() -> openssl_public_decrypt()" );
             }
         } else {
-            warn( "WARNING: rsaDecryptPublic() -> openssl_pkey_get_public()" );
+            avakWarn( "WARNING: rsaDecryptPublic() -> openssl_pkey_get_public()" );
         }
     }
     return( $encryptedData );
 }
 
-// takes arbitrary $data, base64-encoded $signature, ASCII public key; returns 1=good, 0=bad, -1=error
+// takes arbitrary $data, binary $signature, ASCII public key; returns 1=good, 0=bad, -1=error
 function rsaVerifyPublic( $data=null, $signature=null, $publicKeyString=null ) {
     $verification = -1;
     if( $data && $signature && $publicKeyString ) {
         $publicKey = openssl_pkey_get_public( $publicKeyString );
         if( $publicKey ) {
-            $verification = openssl_verify( $data, base64_decode( $signature ), $publicKey, OPENSSL_ALGO_SHA256 );
+            $verification = openssl_verify( $data, $signature, $publicKey, OPENSSL_ALGO_SHA256 );
         } else {
-            warn( "WARNING: rsaVerifyPublic() -> openssl_pkey_get_public()" );
+            avakWarn( "WARNING: rsaVerifyPublic() -> openssl_pkey_get_public()" );
         }
     }
     return( $verification );
@@ -84,7 +84,7 @@ function rsaDetailsPublic( $publicKeyString=null ) {
         if( $publicKey ) {
             $details = openssl_pkey_get_details( $publicKey );
         } else {
-            warn( "WARNING: rsaDetailsPublic() -> openssl_pkey_get_public()" );
+            avakWarn( "WARNING: rsaDetailsPublic() -> openssl_pkey_get_public()" );
         }
     }
     return( $details );
@@ -98,7 +98,7 @@ function rsaEncryptPrivate( $data=null, $privateKeyString=null, $password=null )
         if( $privateKey ) {
             openssl_private_encrypt( $data, $encryptedData, $privateKey, OPENSSL_PKCS1_OAEP_PADDING ); // default OPENSSL_PKCS1_PADDING
         } else {
-            warn( "WARNING: rsaEncryptPrivate() -> openssl_pkey_get_private()" );
+            avakWarn( "WARNING: rsaEncryptPrivate() -> openssl_pkey_get_private()" );
         }
     }
     return( $encryptedData );
@@ -112,16 +112,16 @@ function rsaDecryptPrivate( $data=null, $privateKeyString=null, $password=null )
         if( $privateKey ) {
             openssl_private_decrypt( $data, $decryptedData, $privateKey, OPENSSL_PKCS1_OAEP_PADDING );
             if( is_null( $decryptedData ) ) {
-                warn( "WARNING: rsaDecryptPrivate() -> openssl_private_decrypt()" );
+                avakWarn( "WARNING: rsaDecryptPrivate() -> openssl_private_decrypt()" );
             }
         } else {
-            warn( "WARNING: rsaDecryptPrivate() -> openssl_pkey_get_private()" );
+            avakWarn( "WARNING: rsaDecryptPrivate() -> openssl_pkey_get_private()" );
         }
     }
     return( $decryptedData );
 }
 
-// takes arbitrary $data, ASCII private key, optional $password (for encrypted keys); returns base64-encoded $signature
+// takes arbitrary $data, ASCII private key, optional $password (for encrypted keys); returns binary $signature
 function rsaSignPrivate( $data=null, $privateKeyString=null, $password=null ) {
     $signature = null;
     if( $data && $privateKeyString ) {
@@ -129,10 +129,10 @@ function rsaSignPrivate( $data=null, $privateKeyString=null, $password=null ) {
         if( $privateKey ) {
             openssl_sign( $data, $signature, $privateKey, OPENSSL_ALGO_SHA256 );
         } else {
-            warn( "WARNING: rsaSignPrivate() -> openssl_pkey_get_private()" );
+            avakWarn( "WARNING: rsaSignPrivate() -> openssl_pkey_get_private()" );
         }
     }
-    return( base64_encode( $signature ) );
+    return( $signature );
 }
 
 // takes ASCII private key, optional $password (for encrypted keys); returns array() from openssl_pkey_get_details()
@@ -143,7 +143,7 @@ function rsaDetailsPrivate( $privateKeyString=null, $password=null ) {
         if( $privateKey ) {
             $details = openssl_pkey_get_details( $privateKey );
         } else {
-            warn( "WARNING: rsaDetailsPrivate() -> openssl_pkey_get_private()" );
+            avakWarn( "WARNING: rsaDetailsPrivate() -> openssl_pkey_get_private()" );
         }
     }
     return( $details );
@@ -176,25 +176,24 @@ function aesGenIV( $cipher='aes-256-ctr' ) {
     return( randomBytes( openssl_cipher_iv_length( $cipher ) ) );
 }
 
-// takes arbitrary $data, binary $key; returns base64-encoded data (16-byte IV, 32-byte HMAC, then cipher text)
+// takes arbitrary plain text $data, binary $key; returns binary encrypted data (16-byte IV, 32-byte HMAC, then cipher text)
 function aesEncrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     if( is_null( $iv ) ) $iv = aesGenIV( $cipher );             // generate random IV if not specified
     $encryptedData = openssl_encrypt( $data, $cipher, $key, OPENSSL_RAW_DATA, $iv );
     $hmac = hash_hmac( 'sha256', $encryptedData, $key, true );  // true = as binary
-    return( base64_encode( $iv . $hmac . $encryptedData ) );
+    return( $iv . $hmac . $encryptedData );
 }
 
-// takes base64-encoded $data (16-byte IV, 32-byte HMAC, then cipher text), binary $key; returns raw plain text
+// takes binary encrypted $data (16-byte IV, 32-byte HMAC, then cipher text), binary $key; returns raw plain text
 function aesDecrypt( $data=null, $key=null, $cipher='aes-256-ctr', $iv=null ) {
     $ret = null;
-    $bin = base64_decode( $data );                                                      // decode base64-encoded $data
-    if( is_null( $iv ) ) $iv = substr( $bin, 0, openssl_cipher_iv_length( $cipher ) );  // extract IV if not specified
-    $hmac = substr( $bin, openssl_cipher_iv_length( $cipher ), 32 );                    // 32 bytes = 256 bits for SHA-256
-    $encryptedData = substr( $bin, openssl_cipher_iv_length( $cipher ) + 32 );          // rest is cipher text
+    if( is_null( $iv ) ) $iv = substr( $data, 0, openssl_cipher_iv_length( $cipher ) ); // extract IV if not specified
+    $hmac = substr( $data, openssl_cipher_iv_length( $cipher ), 32 );                   // 32 bytes = 256 bits for SHA-256
+    $encryptedData = substr( $data, openssl_cipher_iv_length( $cipher ) + 32 );         // rest is cipher text
     if( hash_equals( $hmac, hash_hmac( 'sha256', $encryptedData, $key, true ) ) ) {     // return plain text only if HMAC matches
         $ret = openssl_decrypt( $encryptedData, $cipher, $key, OPENSSL_RAW_DATA, $iv );
     } else {
-        warn( "WARNING: aesDecrypt() HMAC mismatch" );
+        avakWarn( "WARNING: aesDecrypt() HMAC mismatch" );
     }
     return( $ret );
 }
