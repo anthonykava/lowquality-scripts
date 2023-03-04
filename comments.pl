@@ -2,8 +2,9 @@
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 # / comments.pl: quick & dirty tool to show comments from a file or http/s URL /
-# \ @anthonykava                                               2023-03-04.1337 \
-# //////////////////////////////////////////////////////////////////////////////
+# \              there will be false-(positives|negatives) note: quick & dirty \
+# / @anthonykava                                               2023-03-04.1337 /
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 use strict;                                                 # of course
 use warnings;                                               # why not?
@@ -29,19 +30,19 @@ foreach(`${cmd}`) {                                         # iter. on output
     s/^\s+//;                                               # trim leading space
     s/\s+$//;                                               # trim trailing
     if(/(\/\/.+)$/) {                                       # '//' comment
-        printf("%05d: %s\n",$ln,$1);
+        printf("%5d: %s\n",$ln,$1) if !/((url|=)\s*[\(\"\']\s*|https?:)\Q$1\E/i;
     } elsif(/(#.+)$/) {                                     # '#' comment?
         $_=$1;
         s/\#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})[\;\"\'\s]//g;   # try to del colours
-        printf("%05d:  %s\n",$ln,$1) if /(\/\/|\#.+)$/;     # test again
+        printf("%5d:  %s\n",$ln,$1) if /(\/\/|\#.+)$/;      # test again
     } elsif(/(\/\*.*)$/) {                                  # start of a block
         $_=$1;
         s/(\*\/).*$/$1/;                                    # trim trailing bits
-        printf("%05d: [] %s\n",$ln,$_);
+        printf("%5d: [] %s\n",$ln,$_);
         $in=1 unless /\*\//;                                # set flag unless
     } elsif($in) {                                          # lines in block
-        printf("%05d: \\- %s\n",$ln,$1) if  /(.*\*\/).*$/;  # trim trailing bits
-        printf("%05d: \\- %s\n",$ln,$_) if !/(.*\*\/).*$/;  # fully within block
+        printf("%5d: \\- %s\n",$ln,$1) if  /(.*\*\/).*$/;   # trim trailing bits
+        printf("%5d: \\- %s\n",$ln,$_) if !/(.*\*\/).*$/;   # fully within block
         $in=0 if /\*\//;                                    # unset flag
     }
 }
