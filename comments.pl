@@ -16,7 +16,7 @@ $url=~s/[\'\"\`\!]//g;                                      # minor sanitisation
 # we'll be running $cmd and parsing its output lines
 my $cmd="wget --no-check-certificate -qO - '${url}'";       # default wget(1)
 if($url=~/^file:(.+)$/) {                                   # if file: ...
-    die("file not found: ${url}") if !-e $1;                # check exists
+    die("file not found: $1") if !-e $1;                    # check exists
     $cmd="cat '$1'";                                        # cat(1) for files
 }
 
@@ -28,18 +28,20 @@ foreach(`${cmd}`) {                                         # iter. on output
     chomp();                                                # no new lines
     s/^\s+//;                                               # trim leading space
     s/\s+$//;                                               # trim trailing
-    if(/((\/\/|\#.+)$)/) {                                  # // or # ...
+    if(/(\/\/.+)$/) {                                       # '//' comment
+        printf("%05d: %s\n",$ln,$1);
+    } elsif(/(#.+)$/) {                                     # '#' comment?
         $_=$1;
-        printf("%05d: %s\n",$ln,$_)                         # ignore colours?
-            if !/\#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})[\;\"\'\s]/;
+        s/\#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})[\;\"\'\s]//g;   # try to del colours
+        printf("%05d: %s\n",$ln,$1) if /(\/\/|\#.+)$/;      # test again
     } elsif(/(\/\*.*)$/) {                                  # start of a block
         $_=$1;
-        s/(\*\/).*$/$1/;                                    # trim trailing
-        printf("%05d: %s\n",$ln,$_);
+        s/(\*\/).*$/$1/;                                    # trim trailing bits
+        printf("%05d:    %s\n",$ln,$_);
         $in=1 unless /\*\//;                                # set flag unless
     } elsif($in) {                                          # lines in block
-        printf("%05d: \\-- %s\n",$ln,$1) if  /(.*\*\/).*$/;
-        printf("%05d: \\-- %s\n",$ln,$_) if !/(.*\*\/).*$/;
+        printf("%05d: \\- %s\n",$ln,$1) if  /(.*\*\/).*$/;  # trim trailing bits
+        printf("%05d: \\- %s\n",$ln,$_) if !/(.*\*\/).*$/;  # fully within block
         $in=0 if /\*\//;                                    # unset flag
     }
 }
