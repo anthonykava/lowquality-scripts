@@ -37,7 +37,7 @@ foreach(`${cmd}`) {                                         # iter. on output
     } elsif(/(\/\*.*)$/) {                                  # start of a block
         $_=$1;
         s/(\*\/).*$/$1/;                                    # trim trailing bits
-        printf("%05d:    %s\n",$ln,$_);
+        printf("%05d: [] %s\n",$ln,$_);
         $in=1 unless /\*\//;                                # set flag unless
     } elsif($in) {                                          # lines in block
         printf("%05d: \\- %s\n",$ln,$1) if  /(.*\*\/).*$/;  # trim trailing bits
