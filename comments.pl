@@ -33,7 +33,7 @@ foreach(`${cmd}`) {                                         # iter. on output
     } elsif(/(#.+)$/) {                                     # '#' comment?
         $_=$1;
         s/\#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})[\;\"\'\s]//g;   # try to del colours
-        printf("%05d: %s\n",$ln,$1) if /(\/\/|\#.+)$/;      # test again
+        printf("%05d:  %s\n",$ln,$1) if /(\/\/|\#.+)$/;     # test again
     } elsif(/(\/\*.*)$/) {                                  # start of a block
         $_=$1;
         s/(\*\/).*$/$1/;                                    # trim trailing bits
