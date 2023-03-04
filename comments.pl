@@ -10,14 +10,14 @@ use warnings;                                               # why not?
 
 # $url as argument, if not ^http then we assume it's a file
 my $url=shift()||die("\nusage: $0 'url|filename'\n\n");     # needs a single arg
-$url='file:'.$url if &ltrim($url)!~/^http/i;                # files get file:
+$url='file:'.$url if &ltrim($url)!~/^http/i;                # files get ^file:
 $url=~s/[\'\"\`\!]//g;                                      # minor sanitisation
 
 # we'll be running $cmd and parsing its output lines
-my $cmd="wget --no-check-certificate -qO - '${url}'";       # default wget
+my $cmd="wget --no-check-certificate -qO - '${url}'";       # default wget(1)
 if($url=~/^file:(.+)$/) {                                   # if file: ...
     die("file not found: ${url}") if !-e $1;                # check exists
-    $cmd="cat '$1'";                                        # cat for files
+    $cmd="cat '$1'";                                        # cat(1) for files
 }
 
 # tofu and potatoes
@@ -30,8 +30,8 @@ foreach(`${cmd}`) {                                         # iter. on output
     s/\s+$//;                                               # trim trailing
     if(/((\/\/|\#.+)$)/) {                                  # // or # ...
         $_=$1;
-        printf("%05d: %s\n",$ln,$_)                         # ignore colours
-            if !/[\:\"\'\s](\#[A-Fa-f0-9]{3}|\#[A-Fa-f0-9]{6})[\;\"\'\s]/;
+        printf("%05d: %s\n",$ln,$_)                         # ignore colours?
+            if !/\#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})[\;\"\'\s]/;
     } elsif(/(\/\*.*)$/) {                                  # start of a block
         $_=$1;
         s/(\*\/).*$/$1/;                                    # trim trailing
